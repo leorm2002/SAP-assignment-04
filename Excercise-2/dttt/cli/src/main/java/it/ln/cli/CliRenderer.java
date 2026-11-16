@@ -27,12 +27,21 @@ public class CliRenderer implements Renderer {
     public Move move(Board board) {
         render(board);
         System.out.println("E' il tuo turno! Inserisci coordinate (x e y)...");
-        System.out.print("Riga (x): ");
-        int x = scanner.nextInt();
-        System.out.print("Colonna (y): ");
-        int y = scanner.nextInt();
-        scanner.nextLine();
+        int x = readCoordinate("Riga (x): ");
+        int y = readCoordinate("Colonna (y): ");
         return new Move(x, y);
+    }
+
+    private int readCoordinate(String prompt) {
+        while (true) {
+            System.out.print(prompt);
+            String line = scanner.nextLine();
+            try {
+                return Integer.parseInt(line.trim());
+            } catch (NumberFormatException e) {
+                invalid();
+            }
+        }
     }
 
     @Override
