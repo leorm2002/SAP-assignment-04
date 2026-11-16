@@ -13,6 +13,10 @@
       <artifactId>game</artifactId>
       <version>1.0-SNAPSHOT</version>
 
+      <properties>
+            <exec.mainClass>it.ln.client.game.GameLoop</exec.mainClass>
+      </properties>
+
       <dependencies>
             <dependency>
                   <groupId>it.ln</groupId>

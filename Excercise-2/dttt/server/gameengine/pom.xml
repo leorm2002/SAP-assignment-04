@@ -11,6 +11,10 @@
 
       <artifactId>gameengine</artifactId>
 
+      <properties>
+            <exec.mainClass>it.ln.server.gameengine.Server</exec.mainClass>
+      </properties>
+
       <dependencies>
             <dependency>
                   <groupId>it.ln</groupId>
