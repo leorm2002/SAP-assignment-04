@@ -17,10 +17,11 @@ lazy val root = project
     version := "0.1.0-SNAPSHOT",
 
     scalaVersion := scala3Version,
+    Compile / run / fork := true,
+    Compile / run / connectInput := true,
 
     libraryDependencies ++= Seq(
       // Framework di Test
-      "org.scalameta" %% "munit" % "1.3.2" % Test,
       "org.scalatest" %% "scalatest" % "3.2.20" % Test,
 
       // Apache Pekko (Attori)
@@ -28,10 +29,11 @@ lazy val root = project
       "org.apache.pekko" %% "pekko-actor-testkit-typed" % PekkoVersion % Test,
       "org.apache.pekko" %% "pekko-stream" % PekkoVersion,
       "org.apache.pekko" %% "pekko-http" % PekkoHttpVersion,
-      "org.apache.pekko" %% "pekko-http-spray-json" % "1.1.0",
+      "org.apache.pekko" %% "pekko-http-spray-json" % PekkoHttpVersion,
       "org.apache.pekko" %% "pekko-cluster-typed" % PekkoVersion,
+      "org.apache.pekko" %% "pekko-cluster-sharding-typed" % PekkoVersion,
+      "org.apache.pekko" %% "pekko-serialization-jackson" % PekkoVersion,
       // Logging
-      "com.typesafe.scala-logging" %% "scala-logging" % "3.9.6",
       "ch.qos.logback" % "logback-classic" % "1.5.37",
 
       // Lettura files

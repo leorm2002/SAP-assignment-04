@@ -2,8 +2,12 @@ import os.Path
 import upickle.default._
 import scala.annotation.publicInBinary
 
-private case class SensorConfig(name: String, area: Option[String] = None) derives ReadWriter
+enum SensorType derives ReadWriter {
+  @upickle.implicits.key("motion") case Motion
+  @upickle.implicits.key("door-window") case DoorWindow
+}
 
+private case class SensorConfig(name: String, area: Option[String] = None, sensorType: SensorType) derives ReadWriter
 private case class Config(
     useAreas: Boolean,
     entryDelay: Int,
@@ -43,6 +47,7 @@ object Config {
   }
 
   def validateConfig(config: Config) = {
+    require(config.sensors.map(_.name).distinct.size == config.sensors.size, "Sensor names must be unique")
     if (config.useAreas && config.sensors.exists(s => s.area.isEmpty)) {
       var sensorWithMissing = config.sensors
         .filter(s => s.area.isEmpty)

@@ -1,6 +1,6 @@
 import org.apache.pekko.actor.typed.Behavior
 import AlarmSystem.AlarmSystemCommand
-import org.apache.pekko.actor.typed.ActorRef
+import org.apache.pekko.actor.typed.RecipientRef
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import AlarmSystem.ArmAll
 import AlarmSystem.ArmAreas
@@ -11,7 +11,7 @@ object Keypad {
   final case class ArmAll(pin: String) extends KeypadCommand
   final case class Unarm(pin: String) extends KeypadCommand
 
-  def apply(system: ActorRef[AlarmSystemCommand]): Behavior[KeypadCommand] = Behaviors.receive { (ctx, msg) =>
+  def apply(system: RecipientRef[AlarmSystemCommand]): Behavior[KeypadCommand] = Behaviors.receive { (ctx, msg) =>
     msg match {
       case ArmAreas(pin, areas) => {
         system ! AlarmSystem.ArmAreas(pin, areas)

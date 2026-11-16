@@ -3,18 +3,22 @@
     "sensors": [
         {
             "name": "SENSOR_1",
+            "sensorType": "motion",
             "area": "AREA_1"
         },
         {
             "name": "SENSOR_2",
+            "sensorType": "door-window",
             "area": "AREA_1"
         },
         {
             "name": "SENSOR_3",
+            "sensorType": "motion",
             "area": "AREA_1"
         },
         {
             "name": "SENSOR_4",
+            "sensorType": "door-window",
             "area": "AREA_2"
         }
     ],

@@ -5,9 +5,11 @@ import org.apache.pekko.actor.typed.scaladsl.TimerScheduler
 import org.apache.pekko.actor.typed.ActorRef
 import Siren.SirenCommand
 import Siren.StartSiren
+import org.apache.pekko.cluster.sharding.typed.scaladsl.EntityTypeKey
 
 object AlarmSystem {
-  sealed trait AlarmSystemCommand
+  val TypeKey: EntityTypeKey[AlarmSystemCommand] = EntityTypeKey("Alarm")
+  sealed trait AlarmSystemCommand extends CborSerializable
 
   // Public
   final case class ArmAll(pin: String) extends AlarmSystemCommand
@@ -22,7 +24,7 @@ object AlarmSystem {
   private final case class ArmAreasNow(areas: List[String]) extends AlarmSystemCommand
   private final case class AlarmNow(sensorName: String) extends AlarmSystemCommand
 
-  sealed trait AlarmSystemResponse
+  sealed trait AlarmSystemResponse extends CborSerializable
   final case class GetStateRespone(alarmState: AlarmState) extends AlarmSystemResponse
 
   // Timer keys
@@ -30,6 +32,7 @@ object AlarmSystem {
   private case object AlarmTimerKey
 
   enum AlarmState {
+    case Recovery
     case Unarmed
     case Arming
     case Armed
@@ -39,7 +42,21 @@ object AlarmSystem {
   }
 
   def apply(config: Config, siren: ActorRef[SirenCommand]): Behavior[AlarmSystemCommand] =
-    Behaviors.withTimers(timers => unarmed(config, timers, siren))
+    Behaviors.withTimers(timers => recovery(config, timers, siren))
+
+  def recovery(config: Config, timers: TimerScheduler[AlarmSystemCommand], siren: ActorRef[SirenCommand]): Behavior[AlarmSystemCommand] = Behaviors.receiveMessage {
+    case Unarm(pin) if config.isValid(pin) =>
+      {
+        timers.cancelAll()
+        siren ! Siren.StopSiren
+      }
+      unarmed(config, timers, siren)
+    case GetState(replyTo) => {
+      replyTo ! GetStateRespone(AlarmState.Recovery)
+      Behaviors.same
+    }
+    case _ => Behaviors.same
+  }
 
   def unarmed(
       config: Config,
@@ -163,7 +180,7 @@ object AlarmSystem {
         case ArmAreas(pin, areas)     => Behaviors.same
         case Disconnected(sensorName) => panick(config, timers, siren)
         case GetState(replyTo)        => {
-          if (timers.isTimerActive(ArmTimerKey)) {
+          if (timers.isTimerActive(AlarmTimerKey)) {
             replyTo ! GetStateRespone(AlarmState.Prealarming)
           } else {
             replyTo ! GetStateRespone(AlarmState.Armed)
@@ -226,7 +243,7 @@ object AlarmSystem {
         case ArmAllNow                => Behaviors.same
         case ArmAreasNow(areas)       => Behaviors.same
         case AlarmNow(sensorName)     => Behaviors.same
-        case Disconnected(sensorName) => ???
+        case Disconnected(sensorName) => Behaviors.same
         case GetState(replyTo)        => {
           replyTo ! GetStateRespone(AlarmState.SensorDied)
           Behaviors.same

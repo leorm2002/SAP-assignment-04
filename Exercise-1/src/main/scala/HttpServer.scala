@@ -14,19 +14,21 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.io.{Source, StdIn}
 import org.apache.pekko.actor.typed.ActorRef
+import org.apache.pekko.actor.typed.RecipientRef
 import org.apache.pekko.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import Keypad.KeypadCommand
 import AlarmSystem.AlarmSystemCommand
 import spray.json.DefaultJsonProtocol._
 import spray.json._
-import Sensor.SensorCommand
 
 object HttpServer {
 
   def main(args: Array[String]): Unit = {
+    require(args.nonEmpty, "Usage: HttpServer <cluster-port>")
 
     val config: Config = Config.read(os.pwd / "config.json")
-    val system: ActorSystem[AlarmManager.Command] = ActorSystem(AlarmManager(config), "alarm-http-api")
+    val system: ActorSystem[AlarmManager.Command] =
+      Main.start(config, args(0).toInt, NodeRole.Keypad)
 
     // Setting up all the implicits for pekko to work
     implicit val executionContext: ExecutionContext = system.executionContext
@@ -113,7 +115,7 @@ def resourceAsString(resourceName: String): String = {
     source.close()
   }
 }
-def trigger(sensorName: String, sensors: Map[String, ActorRef[Sensor.SensorCommand]]): HttpResponse = {
+def trigger(sensorName: String, sensors: Map[String, RecipientRef[Sensor.Trigger.type]]): HttpResponse = {
   sensors(sensorName) ! Sensor.Trigger
   ok(s"triggered:$sensorName")
 }

@@ -2,8 +2,8 @@ import org.apache.pekko.actor.typed.Behavior
 import org.apache.pekko.actor.typed.scaladsl.Behaviors
 import scala.annotation.switch
 import org.apache.pekko.actor.typed.ActorRef
-import Sensor.SensorCommand
-import org.apache.pekko.actor.typed.{ChildFailed, Terminated}
+import org.apache.pekko.actor.typed.SupervisorStrategy
+import org.apache.pekko.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity, EntityRef}
 import Sensor.Trigger
 import AlarmSystem.AlarmSystemCommand
 import AlarmSystem.ArmAreas
@@ -13,33 +13,41 @@ import AlarmSystem.GetStateRespone
 import AlarmSystem.GetState
 import AlarmSystem.AlarmSystemResponse
 import Keypad.KeypadCommand
-import org.apache.pekko.cluster.typed.Cluster
 object AlarmManager {
   sealed trait Command
   final case class GetComponents(replyTo: ActorRef[AlarmComponents]) extends Command
   final case class AlarmComponents(
-      sensors: Map[String, ActorRef[SensorCommand]],
-      system: ActorRef[AlarmSystemCommand],
+      sensors: Map[String, EntityRef[Trigger.type]],
+      system: EntityRef[AlarmSystemCommand],
       keypad: ActorRef[KeypadCommand]
   )
 
   def apply(config: Config): Behavior[Command] = Behaviors.setup {
     (ctx) =>
-      val cluster = Cluster(ctx.system)
-      ctx.log.info(s"Pekko Node ${cluster.selfMember.address} is initializing...")
-
       ctx.log.info("System started")
-      // Istantiating the siran
-      val siren = ctx.spawn(Siren(), "syren")
-      // The alarm center
-      val system = ctx.spawn(AlarmSystem(config, siren), "alarm")
+      val sharding = ClusterSharding(ctx.system)
+      sharding.init(Entity(AlarmSystem.TypeKey) { _ =>
+        Behaviors
+          .supervise(Behaviors.setup[AlarmSystemCommand] { controlCtx =>
+            val siren = controlCtx.spawn(Siren(), "syren")
+            AlarmSystem(config, siren)
+          })
+          .onFailure[Exception](SupervisorStrategy.restart)
+      }.withRole(NodeRole.Control.configName))
+      val system = sharding.entityRefFor(AlarmSystem.TypeKey, "home")
 
       // And finally the sensors
-    val sensors = config.sensors.map { s =>
-      // Spawni the sensor
-      val sensorRef = ctx.spawn(Sensor(s.name, system), s.name)
-      // Watch the sensor lyce cycle
-      ctx.watch(sensorRef)
+    sharding.init(Entity(Sensor.MotionTypeKey) { entity =>
+      Sensor.motion(entity.entityId, system)
+    }.withRole(NodeRole.Sensors.configName))
+    sharding.init(Entity(Sensor.DoorWindowTypeKey) { entity =>
+      Sensor.doorWindow(entity.entityId, system)
+    }.withRole(NodeRole.Sensors.configName))
+    val sensors: Map[String, EntityRef[Trigger.type]] = config.sensors.map { s =>
+      val sensorRef: EntityRef[Trigger.type] = s.sensorType match {
+        case SensorType.Motion => sharding.entityRefFor(Sensor.MotionTypeKey, s.name)
+        case SensorType.DoorWindow => sharding.entityRefFor(Sensor.DoorWindowTypeKey, s.name)
+      }
       (s.name, sensorRef)
     }.toMap
 
@@ -55,14 +63,6 @@ object AlarmManager {
         case GetComponents(replyTo) =>
           replyTo ! components
           Behaviors.same
-      }
-    }
-    .receiveSignal {
-      case (ctx, ChildFailed(ref, cause)) => {
-        ctx.log.error(s"The sensor ${ref.path.name} died: ${cause.getMessage}")
-        // Logica allarme...
-        components.system ! Disconnected(ref.path.name)
-        Behaviors.same
       }
     }
 }
