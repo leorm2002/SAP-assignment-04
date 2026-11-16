@@ -2,9 +2,10 @@ package it.ln.server.gameengine;
 
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.ArrayDeque;
+import java.util.Queue;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -22,11 +23,11 @@ public class TTTServiceImpl extends UnicastRemoteObject implements TTTService {
         super();
     }
 
-    final ConcurrentLinkedQueue<EnrichedPlayer> waitlist = new ConcurrentLinkedQueue<>();
+    final Queue<EnrichedPlayer> waitlist = new ArrayDeque<>();
     final ConcurrentMap<Player, Game> games = new ConcurrentHashMap<>();
 
     @Override
-    public Player join(Client c) {
+    public synchronized Player join(Client c) {
         final Player p = new Player(UUID.randomUUID().toString());
         final EnrichedPlayer ep = new EnrichedPlayer(p, c);
         final EnrichedPlayer queuedPlayer = waitlist.poll();
