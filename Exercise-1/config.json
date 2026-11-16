@@ -1,0 +1,24 @@
+{
+    "useAreas": true,
+    "sensors": [
+        {
+            "name": "SENSOR_1",
+            "area": "AREA_1"
+        },
+        {
+            "name": "SENSOR_2",
+            "area": "AREA_1"
+        },
+        {
+            "name": "SENSOR_3",
+            "area": "AREA_1"
+        },
+        {
+            "name": "SENSOR_4",
+            "area": "AREA_2"
+        }
+    ],
+    "entryDelay": 5,
+    "exitDelay": 5,
+    "pin": "1234"
+}
