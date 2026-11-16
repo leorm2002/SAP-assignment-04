@@ -54,13 +54,16 @@ class ClientImpl implements it.ln.client.clientapi.Client {
     }
 
     public void play() throws InterruptedException, RemoteException {
-        r.joining();
-        this.myIdentity = server.join(this);
+        try {
+            r.joining();
+            this.myIdentity = server.join(this);
 
-        while (handle(messages.take())) {
+            while (handle(messages.take())) {
+            }
+
+            r.ended();
+        } finally {
+            UnicastRemoteObject.unexportObject(this, true);
         }
-
-        r.ended();
-        UnicastRemoteObject.unexportObject(this, true);
     }
 }
