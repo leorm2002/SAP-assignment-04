@@ -1,0 +1,24 @@
+TicTacToe distribuited
+
+
+Componenti:
+
+- CLI/GUI (UI)
+- core
+    - game engine
+    - remote
+
+
+
+
+Architettura decentralizzata, chi "espone" una partita fa da server/master??
+
+Protocollo:
+
+    lo stato viene scambiato a ogni iterazione:
+    1. inizia l'host
+    2.  fa mossa
+        check per vicnicta o fine possibili mosse
+        - se vincita o fine comunica all'altro
+        - passa il turno
+    
