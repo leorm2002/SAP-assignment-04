@@ -95,3 +95,8 @@ nb-configuration.xml
 seminar-pcd-actor-pekko-code-master
 requirements.md
 .bloop
+doc/Excercise-3/report.aux
+doc/Excercise-3/report.fdb_latexmk
+doc/Excercise-3/report.fls
+doc/Excercise-3/report.out
+doc/Excercise-3/report.synctex.gz
